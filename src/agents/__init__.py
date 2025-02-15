@@ -5,7 +5,7 @@ class Agent:
         self.agent_id = agent_id
         self.environment = environment
 
-    def step(self):
+    def step(self, output_file):
         """
         This method represents a single step of the agent's execution.
         Must be overridden by subclasses.

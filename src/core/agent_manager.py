@@ -1,5 +1,6 @@
 # src/core/agent_manager.py
 import importlib
+import time
 
 class AgentManager:
     def __init__(self, environment):
@@ -28,8 +29,17 @@ class AgentManager:
         else:
             print(f"Agent not found: {agent_id}")
 
-    def run(self):
+    def run(self, output_file): #Added output file
         print("Agent manager running...")
-        while True: #Placeholder
+        running = True # added a running variable
+        while running:
             for agent_id, agent in list(self.agents.items()):
-                agent.step()
+                agent.step(output_file) # Pass output file
+                time.sleep(0.5) #slow down for viewing purposes.
+
+            # For demonstration purposes, stop after a few iterations.
+            # In a real application, you'd have a different mechanism
+            # to control when the system stops (e.g., a command from the GUI).
+            if self.next_agent_id > 5:
+                running = False
+                print("Stopping agent manager (for demo purposes).")

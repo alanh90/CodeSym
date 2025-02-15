@@ -2,16 +2,16 @@
 from core.agent_manager import AgentManager
 from core.environment import Environment
 import config
-
+import time  # Import the time module
 
 def main():
     environment = Environment()
     agent_manager = AgentManager(environment)
-
-    # Example: Create an agent (we'll define this agent later)
     agent_manager.create_agent("add_agent", "agents.function_agent_add")
 
-    agent_manager.run()
+    # Open a file for output
+    with open("output.txt", "w") as output_file:
+        agent_manager.run(output_file)  # Pass the file to the run method
 
 
 if __name__ == "__main__":
