@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CodeSym</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>CodeSym Control Panel</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
 </head>
 <body>
     <h1>CodeSym Control Panel</h1>
@@ -10,32 +11,27 @@
     <div id="output"></div>
 
     <script>
-        const runButton = document.getElementById("runButton");
-        const outputDiv = document.getElementById("output");
-        let pollingInterval = null;
+        document.getElementById("runButton").addEventListener("click", async function() {
+            const outputDiv = document.getElementById("output");
+            outputDiv.textContent = "Running CodeSym...";
 
-        runButton.addEventListener("click", async () => {
-            outputDiv.textContent = "Running...";
+            // Send POST request to start CodeSym
+            const response = await fetch("/run_codesym", { method: "POST" });
+            const data = await response.json();
 
-            // Start CodeSym (non-blocking)
-            const startResponse = await fetch("/run_codesym", { method: "POST" });
-            const startData = await startResponse.json();
-
-            if (startData.status === "success") {
-                // Start polling for output
-                pollingInterval = setInterval(async () => {
+            if (data.status === "success") {
+                // Begin polling for output
+                setInterval(async () => {
                     const outputResponse = await fetch("/get_output");
                     const outputData = await outputResponse.json();
-
                     if (outputData.status === "success") {
                         outputDiv.textContent = outputData.output;
                     } else {
                         outputDiv.textContent = "Error: " + outputData.message;
-                        clearInterval(pollingInterval); // Stop polling on error
                     }
-                }, 500); // Poll every 500 milliseconds (0.5 seconds)
+                }, 1000);
             } else {
-                outputDiv.textContent = "Error starting CodeSym: " + startData.message;
+                outputDiv.textContent = "Failed to run CodeSym: " + data.message;
             }
         });
     </script>

@@ -1,8 +1,9 @@
 # src/main.py
+
 from core.agent_manager import AgentManager
 from core.environment import Environment
 import config
-import time  # Import the time module
+import time
 
 def main():
     environment = Environment()
@@ -12,7 +13,6 @@ def main():
     # Open a file for output
     with open("output.txt", "w") as output_file:
         agent_manager.run(output_file)  # Pass the file to the run method
-
 
 if __name__ == "__main__":
     main()
