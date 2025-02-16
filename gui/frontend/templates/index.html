@@ -181,36 +181,38 @@
       for await (const entry of dirHandle.values()) {
         const li = document.createElement('li');
         li.classList.add(entry.kind);
-        const span = document.createElement('span');
-        span.textContent = entry.name;
-        span.style.cursor = "pointer";
-        li.appendChild(span);
 
+        // Toggle button (for directories)
         if (entry.kind === 'directory') {
-          // Add an expand/collapse icon.
           const toggleBtn = document.createElement('button');
           toggleBtn.textContent = "➕";
           toggleBtn.className = "toggle-btn";
           toggleBtn.onclick = async (e) => {
             e.stopPropagation();
             if (toggleBtn.textContent === "➕") {
-              // Expand: build children and show them.
+              // Expand: build children
               const childrenTree = await buildTree(entry);
               li.appendChild(childrenTree);
               toggleBtn.textContent = "➖";
             } else {
-              // Collapse: remove children.
+              // Collapse: remove children
               const childUl = li.querySelector("ul");
               if (childUl) li.removeChild(childUl);
               toggleBtn.textContent = "➕";
             }
           };
-          li.insertBefore(toggleBtn, span);
-          // Clicking the folder name does nothing (or you could toggle).
-        } else if (entry.kind === 'file') {
-          // For files, clicking opens the file in a tab.
+          li.appendChild(toggleBtn);
+        }
+
+        // Folder/file label
+        const span = document.createElement('span');
+        span.textContent = entry.name;
+        if (entry.kind === 'file') {
+          // Clicking file opens in a tab
           span.onclick = () => { openFileTab(entry); };
         }
+        li.appendChild(span);
+
         ul.appendChild(li);
       }
       return ul;
