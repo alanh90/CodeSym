@@ -148,10 +148,10 @@ body {
   font-size: 1em;
 }
 
-/* Main Container Layout: Using flex for resizable left panel */
+/* Main Container Layout: Using flex for a resizable left panel */
 .main-container {
   display: flex;
-  height: calc(100vh - 60px); /* 60px is header + chat area */
+  height: calc(100vh - 60px); /* 60px accounts for the header + chat area */
 }
 
 /* Left Panel: default width, overflow, border-right */
@@ -167,42 +167,19 @@ body {
   text-align: center;
   margin-bottom: 15px;
 }
-
-/* Resizer for the left panel */
-.resizer {
-  width: 5px;
-  background-color: #444;
-  cursor: col-resize;
-  flex-shrink: 0;
-}
-
-/* The container for center + right panels */
-.center-right-container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Hierarchical Folder Tree */
+/* Hierarchical folder tree styling */
 .left-panel ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .left-panel ul ul {
-  margin-left: 1.25em;
-  padding-left: 0.75em;
-  border-left: 1px solid #444; /* optional vertical line for subfolders */
+  margin-left: 1.5em;
+  padding-left: 0.5em;
 }
 .left-panel li {
-  position: relative;
-  margin: 3px 0;
-  padding-left: 0.25em;
-  display: flex;
-  align-items: center;
-}
-.left-panel li:hover {
-  background-color: #333;
+  margin: 5px 0;
+  cursor: pointer;
 }
 .left-panel li.directory::before {
   content: "📁 ";
@@ -233,6 +210,21 @@ body {
   font-size: 3em;
   display: block;
   margin-bottom: 10px;
+}
+
+/* Resizer for the left panel */
+.resizer {
+  width: 5px;
+  background-color: #444;
+  cursor: col-resize;
+  flex-shrink: 0;
+}
+
+/* The container for center + right panels */
+.center-right-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 /* Center Panel: Tabbed Code Viewer & Debug Window */
