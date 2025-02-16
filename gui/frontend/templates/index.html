@@ -54,13 +54,13 @@
     </form>
   </div>
 
-  <!-- Main Container with Directory View, Code Viewer & Debug Window, and Active Agents -->
+  <!-- Main Container with Left (Folder Tree), Center (Tabbed Code Viewer & Debug), and Right (Active Agents) Panels -->
   <div class="main-container">
-    <!-- Left Panel: Directory Tree / Placeholder -->
+    <!-- Left Panel: Hierarchical Folder Tree -->
     <aside class="left-panel">
       <h2>Projects</h2>
       <div id="directoryTree">
-        <!-- Initially, show a clickable folder icon with prompt text -->
+        <!-- Initially, show a clickable placeholder -->
         <div id="emptyDir" class="empty-dir" onclick="selectProjectDir()">
           <span class="folder-icon">&#128193;</span>
           <p>Select Project Directory</p>
@@ -68,11 +68,15 @@
       </div>
     </aside>
 
-    <!-- Center Panel: Code Viewer on top, Debug Window below -->
+    <!-- Center Panel: Tabbed Code Viewer on top, Debug Window below -->
     <section class="center-panel">
-      <div class="code-viewer">
-        <pre><code id="codeBlock" class="python"></code></pre>
+      <!-- Tab Bar -->
+      <div id="tabBar" class="tab-bar"></div>
+      <!-- Tab Content (scrollable code viewer) -->
+      <div id="tabContent" class="tab-content">
+        <!-- Active tab's code will be shown here -->
       </div>
+      <!-- Debug Window -->
       <div class="debug-window" id="debugWindow">
         <h3>Debug Window</h3>
         <div id="debugLogs"></div>
@@ -87,7 +91,7 @@
   </div>
 
   <script>
-    // Manager Chat: Send prompt to Manager AI and display conversation.
+    /* ===================== Manager AI Chat ===================== */
     async function sendManagerPrompt() {
       const promptInput = document.getElementById('managerPrompt');
       const promptText = promptInput.value.trim();
@@ -95,14 +99,14 @@
       const chatLog = document.getElementById('managerChatLog');
 
       // Append user's message.
-      const userMessageDiv = document.createElement('div');
-      userMessageDiv.className = 'chat-message user-message';
-      userMessageDiv.textContent = "You: " + promptText;
-      chatLog.appendChild(userMessageDiv);
+      const userMsg = document.createElement('div');
+      userMsg.className = 'chat-message user-message';
+      userMsg.textContent = "You: " + promptText;
+      chatLog.appendChild(userMsg);
       chatLog.scrollTop = chatLog.scrollHeight;
       promptInput.value = "";
 
-      // Send prompt to manager AI.
+      // Send prompt to Manager AI.
       const response = await fetch('/prompt_manager', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -110,25 +114,23 @@
       });
       const data = await response.json();
       if (data.status === 'success') {
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'chat-message ai-message';
-        aiMessageDiv.textContent = data.response;
-        chatLog.appendChild(aiMessageDiv);
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'chat-message ai-message';
+        aiMsg.textContent = data.response;
+        chatLog.appendChild(aiMsg);
         chatLog.scrollTop = chatLog.scrollHeight;
       } else {
         alert("Error: " + data.message);
       }
     }
 
-    // Toggle the settings menu.
+    /* ===================== Settings Sidebar ===================== */
     document.getElementById('hamburger').addEventListener('click', function() {
       document.getElementById('settingsMenu').style.display = 'block';
     });
     document.getElementById('closeSettings').addEventListener('click', function() {
       document.getElementById('settingsMenu').style.display = 'none';
     });
-
-    // If "Use same API key" is checked, copy the Manager API key to others.
     document.getElementById('same_api').addEventListener('change', function() {
       if (this.checked) {
         const managerApi = document.getElementById('manager_api').value;
@@ -136,8 +138,6 @@
         document.getElementById('planning_api').value = managerApi;
       }
     });
-
-    // Handle settings form submission.
     document.getElementById('settingsForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const formData = new FormData(e.target);
@@ -157,15 +157,16 @@
       document.getElementById('settingsMenu').style.display = 'none';
     });
 
+    /* ===================== Folder Tree (Hierarchical) ===================== */
     // Use the File System Access API to show a directory picker.
     async function selectProjectDir() {
       if (window.showDirectoryPicker) {
         try {
           const dirHandle = await window.showDirectoryPicker();
-          // Remove the empty placeholder.
-          document.getElementById('directoryTree').innerHTML = '';
-          // List the root directory.
-          listDirectory(dirHandle);
+          // Build the tree view.
+          const tree = await buildTree(dirHandle);
+          document.getElementById('directoryTree').innerHTML = "";
+          document.getElementById('directoryTree').appendChild(tree);
         } catch (e) {
           console.error(e);
         }
@@ -174,42 +175,132 @@
       }
     }
 
-    // Recursively list entries from a given directory handle.
-    async function listDirectory(dirHandle) {
-      const directoryTree = document.getElementById('directoryTree');
-      directoryTree.innerHTML = '';
+    // Build a recursive tree view for a directory handle.
+    async function buildTree(dirHandle) {
       const ul = document.createElement('ul');
       for await (const entry of dirHandle.values()) {
         const li = document.createElement('li');
-        li.textContent = entry.name;
-        li.classList.add(entry.kind); // 'file' or 'directory'
-        li.onclick = async (e) => {
-          e.stopPropagation();
-          if (entry.kind === 'directory') {
-            listDirectory(entry);
-          } else if (entry.kind === 'file') {
-            loadFile(entry);
-          }
-        };
+        li.classList.add(entry.kind);
+        const span = document.createElement('span');
+        span.textContent = entry.name;
+        span.style.cursor = "pointer";
+        li.appendChild(span);
+
+        if (entry.kind === 'directory') {
+          // Add an expand/collapse icon.
+          const toggleBtn = document.createElement('button');
+          toggleBtn.textContent = "➕";
+          toggleBtn.className = "toggle-btn";
+          toggleBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (toggleBtn.textContent === "➕") {
+              // Expand: build children and show them.
+              const childrenTree = await buildTree(entry);
+              li.appendChild(childrenTree);
+              toggleBtn.textContent = "➖";
+            } else {
+              // Collapse: remove children.
+              const childUl = li.querySelector("ul");
+              if (childUl) li.removeChild(childUl);
+              toggleBtn.textContent = "➕";
+            }
+          };
+          li.insertBefore(toggleBtn, span);
+          // Clicking the folder name does nothing (or you could toggle).
+        } else if (entry.kind === 'file') {
+          // For files, clicking opens the file in a tab.
+          span.onclick = () => { openFileTab(entry); };
+        }
         ul.appendChild(li);
       }
-      directoryTree.appendChild(ul);
+      return ul;
     }
 
-    // Load file contents using the File System Access API.
-    async function loadFile(fileHandle) {
+    /* ===================== Tabbed Code Viewer ===================== */
+    const openTabs = {}; // key: file name, value: { tabElement, contentElement, fileHandle }
+
+    // Open a file in a new tab (or activate existing).
+    async function openFileTab(fileHandle) {
+      const fileName = fileHandle.name;
+      // If tab already exists, activate it.
+      if (openTabs[fileName]) {
+        activateTab(fileName);
+        return;
+      }
+      // Otherwise, load file contents.
       try {
         const file = await fileHandle.getFile();
         const content = await file.text();
-        const codeBlock = document.getElementById('codeBlock');
-        codeBlock.textContent = content;
-        hljs.highlightElement(codeBlock);
+
+        // Create a new tab in the tab bar.
+        const tabBar = document.getElementById('tabBar');
+        const tab = document.createElement('div');
+        tab.className = "tab";
+        tab.textContent = fileName;
+        tab.onclick = () => { activateTab(fileName); };
+
+        // Create a close button for the tab.
+        const closeBtn = document.createElement('span');
+        closeBtn.className = "close-tab";
+        closeBtn.textContent = "✖";
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          closeTab(fileName);
+        };
+        tab.appendChild(closeBtn);
+        tabBar.appendChild(tab);
+
+        // Create a content pane for the tab.
+        const tabContent = document.getElementById('tabContent');
+        const contentPane = document.createElement('div');
+        contentPane.className = "code-pane";
+        contentPane.style.display = "none"; // Initially hidden.
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        code.className = "python";
+        code.textContent = content;
+        pre.appendChild(code);
+        contentPane.appendChild(pre);
+        tabContent.appendChild(contentPane);
+        hljs.highlightElement(code);
+
+        // Save in the openTabs object.
+        openTabs[fileName] = { tabElement: tab, contentElement: contentPane, fileHandle: fileHandle };
+
+        // Activate the new tab.
+        activateTab(fileName);
       } catch (e) {
-        console.error("Error reading file:", e);
+        console.error("Error loading file:", e);
       }
     }
 
-    // Active Agents: Poll every 5 seconds.
+    function activateTab(fileName) {
+      // Hide all content panes and remove active class from all tabs.
+      for (const key in openTabs) {
+        openTabs[key].contentElement.style.display = "none";
+        openTabs[key].tabElement.classList.remove("active-tab");
+      }
+      // Show the selected tab's content and mark tab as active.
+      openTabs[fileName].contentElement.style.display = "block";
+      openTabs[fileName].tabElement.classList.add("active-tab");
+    }
+
+    function closeTab(fileName) {
+      // Remove tab and content.
+      const tabObj = openTabs[fileName];
+      tabObj.tabElement.remove();
+      tabObj.contentElement.remove();
+      delete openTabs[fileName];
+      // If closed tab was active, activate another if exists.
+      const remaining = Object.keys(openTabs);
+      if (remaining.length > 0) {
+        activateTab(remaining[0]);
+      } else {
+        document.getElementById('tabContent').innerHTML = "";
+      }
+    }
+
+    /* ===================== Active Agents & Debug Logs ===================== */
     async function fetchActiveAgents() {
       const response = await fetch('/active_agents');
       const data = await response.json();
@@ -227,7 +318,6 @@
     setInterval(fetchActiveAgents, 5000);
     fetchActiveAgents();
 
-    // Debug logs: Poll every 3 seconds.
     async function fetchDebugLogs() {
       const response = await fetch('/debug_logs');
       const data = await response.json();

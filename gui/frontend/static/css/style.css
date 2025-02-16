@@ -4,7 +4,6 @@
   margin: 0;
   padding: 0;
 }
-
 body {
   background-color: #121212;
   color: #e0e0e0;
@@ -19,12 +18,10 @@ body {
   background-color: #1f1f1f;
   padding: 10px 20px;
 }
-
 .header .header-left {
   display: flex;
   align-items: center;
 }
-
 .hamburger {
   background: none;
   border: none;
@@ -33,7 +30,6 @@ body {
   cursor: pointer;
   margin-right: 10px;
 }
-
 .header h1 {
   font-size: 1.8em;
 }
@@ -46,11 +42,9 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-
 .manager-chat-container h2 {
   text-align: center;
 }
-
 .manager-chat-log {
   background-color: #2e2e2e;
   height: 150px;
@@ -58,12 +52,10 @@ body {
   padding: 10px;
   border-radius: 4px;
 }
-
 .manager-chat-input {
   display: flex;
   gap: 10px;
 }
-
 .manager-chat-input input[type="text"] {
   flex: 1;
   padding: 10px;
@@ -72,7 +64,6 @@ body {
   background-color: #2e2e2e;
   color: #e0e0e0;
 }
-
 .manager-chat-input button {
   background-color: #1e88e5;
   border: none;
@@ -81,8 +72,6 @@ body {
   cursor: pointer;
   color: #fff;
 }
-
-/* Chat Message Styles */
 .chat-message {
   margin: 5px 0;
   padding: 5px 10px;
@@ -111,12 +100,10 @@ body {
   z-index: 1000;
   overflow-y: auto;
 }
-
 .settings-menu h2 {
   text-align: center;
   margin-bottom: 20px;
 }
-
 .settings-menu .close-btn {
   position: absolute;
   top: 10px;
@@ -127,16 +114,13 @@ body {
   color: #e0e0e0;
   cursor: pointer;
 }
-
 .settings-menu .form-group {
   margin-bottom: 15px;
 }
-
 .settings-menu label {
   display: block;
   margin-bottom: 5px;
 }
-
 .settings-menu input[type="text"] {
   width: 100%;
   padding: 8px;
@@ -145,16 +129,13 @@ body {
   background-color: #2e2e2e;
   color: #e0e0e0;
 }
-
 .settings-menu .checkbox-group {
   display: flex;
   align-items: center;
 }
-
 .settings-menu .checkbox-group input[type="checkbox"] {
   margin-right: 10px;
 }
-
 .settings-menu button {
   background-color: #1e88e5;
   color: #fff;
@@ -177,7 +158,7 @@ body {
   height: calc(100vh - 60px);
 }
 
-/* Left Panel: Directory View */
+/* Left Panel: Hierarchical Folder Tree */
 .left-panel {
   grid-area: left;
   background-color: #1e1e1e;
@@ -185,35 +166,42 @@ body {
   overflow-y: auto;
   border-right: 1px solid #333;
 }
-
 .left-panel h2 {
   text-align: center;
   margin-bottom: 15px;
 }
-
 .left-panel ul {
   list-style: none;
-  padding-left: 10px;
+  padding-left: 15px;
 }
-
 .left-panel li {
-  padding: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
   margin-bottom: 2px;
   border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
 }
-
+.left-panel li span {
+  flex: 1;
+}
 .left-panel li:hover {
   background-color: #333;
 }
-
 .left-panel li.directory::before {
   content: "📁 ";
+  margin-right: 4px;
 }
-
 .left-panel li.file::before {
   content: "📄 ";
+  margin-right: 4px;
+}
+/* Toggle button styles for folders */
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  margin-right: 4px;
 }
 
 /* Empty Directory Placeholder */
@@ -223,14 +211,13 @@ body {
   cursor: pointer;
   color: #bbb;
 }
-
 .empty-dir .folder-icon {
   font-size: 3em;
   display: block;
   margin-bottom: 10px;
 }
 
-/* Center Panel: Code Viewer & Debug Window */
+/* Center Panel: Tabbed Code Viewer & Debug Window */
 .center-panel {
   grid-area: center;
   display: flex;
@@ -238,22 +225,47 @@ body {
   padding: 15px;
   overflow: hidden;
 }
-
-.code-viewer {
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  background-color: #2e2e2e;
+  border-bottom: 1px solid #333;
+}
+.tab {
+  padding: 8px 12px;
+  cursor: pointer;
+  position: relative;
+  background-color: #2e2e2e;
+  border-right: 1px solid #333;
+}
+.tab.active-tab {
+  background-color: #1e88e5;
+  color: #fff;
+}
+.close-tab {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.8em;
+  cursor: pointer;
+  margin-left: 8px;
+}
+/* Tab Content */
+.tab-content {
   flex: 1;
   background-color: #2e2e2e;
+  overflow: auto;
   padding: 15px;
   border-radius: 4px;
-  overflow: auto;
   margin-bottom: 10px;
 }
-
-.code-viewer pre {
+.code-pane pre {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
 }
 
+/* Debug Window */
 .debug-window {
   flex: 0 0 200px;
   background-color: #1e1e1e;
@@ -261,7 +273,6 @@ body {
   border-radius: 4px;
   overflow-y: auto;
 }
-
 .debug-window h3 {
   margin-bottom: 10px;
   text-align: center;
@@ -275,12 +286,10 @@ body {
   overflow-y: auto;
   border-left: 1px solid #333;
 }
-
 .right-panel h2 {
   text-align: center;
   margin-bottom: 15px;
 }
-
 .agent-box {
   background-color: #2e2e2e;
   padding: 10px;
@@ -289,7 +298,6 @@ body {
   text-align: center;
   transition: background-color 0.3s;
 }
-
 .agent-box:hover {
   background-color: #333;
 }
