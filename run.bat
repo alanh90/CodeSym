@@ -11,9 +11,9 @@ REM --- Change to the script's directory ---
 cd /d "%~dp0"
 echo Current directory: %cd%
 
-REM --- Launch the FastAPI GUI backend in a new window ---
-echo Starting the GUI backend...
-start "GUI Backend" %PY_EMBED% -s -m uvicorn %BACKEND_SCRIPT% %UVICORN_OPTIONS%
+REM --- Start the CodeSym backend in a new window ---
+echo Starting the CodeSym backend...
+start "CodeSym Backend" %PY_EMBED% -s -m uvicorn %BACKEND_SCRIPT% %UVICORN_OPTIONS%
 
 REM --- Wait a few seconds ---
 timeout /t 3 > nul
@@ -23,6 +23,6 @@ echo Launching browser at %BROWSER_URL%...
 start "" "%BROWSER_URL%"
 
 echo.
-echo Application is running. Press any key to exit.
+echo CodeSym is running. Press any key to exit.
 pause
 endlocal

@@ -1,39 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>CodeSym Control Panel</title>
-    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
+  <meta charset="UTF-8">
+  <title>CodeSym</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <!-- Highlight.js for Python syntax highlighting (Monokai Sublime theme) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 </head>
 <body>
-    <h1>CodeSym Control Panel</h1>
-    <button id="runButton">Run CodeSym</button>
-    <div id="output"></div>
+  <!-- Header with Hamburger Button and Title -->
+  <header class="header">
+    <div class="header-left">
+      <button id="hamburger" class="hamburger">&#9776;</button>
+      <h1>CodeSym</h1>
+    </div>
+  </header>
 
-    <script>
-        document.getElementById("runButton").addEventListener("click", async function() {
-            const outputDiv = document.getElementById("output");
-            outputDiv.textContent = "Running CodeSym...";
+  <!-- Manager AI Chat Section -->
+  <div class="manager-chat-container">
+    <h2>Manager AI Chat</h2>
+    <div id="managerChatLog" class="manager-chat-log">
+      <!-- Chat messages will appear here -->
+    </div>
+    <div class="manager-chat-input">
+      <input type="text" id="managerPrompt" placeholder="Type your message...">
+      <button onclick="sendManagerPrompt()">Send</button>
+    </div>
+  </div>
 
-            // Send POST request to start CodeSym
-            const response = await fetch("/run_codesym", { method: "POST" });
-            const data = await response.json();
+  <!-- Settings Sidebar (Hidden by default) -->
+  <div id="settingsMenu" class="settings-menu">
+    <button id="closeSettings" class="close-btn">&times;</button>
+    <h2>Settings</h2>
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="manager_api">Manager AI API Key:</label>
+        <input type="text" id="manager_api" name="manager_api" placeholder="Enter Manager AI API key">
+      </div>
+      <div class="form-group">
+        <label for="function_api">Function AIs API Key:</label>
+        <input type="text" id="function_api" name="function_api" placeholder="Enter Function AIs API key">
+      </div>
+      <div class="form-group">
+        <label for="planning_api">Planning Agent API Key:</label>
+        <input type="text" id="planning_api" name="planning_api" placeholder="Enter Planning Agent API key">
+      </div>
+      <div class="form-group checkbox-group">
+        <input type="checkbox" id="same_api" name="same_api">
+        <label for="same_api">Use same API key for all roles</label>
+      </div>
+      <button type="submit">Save Settings</button>
+    </form>
+  </div>
 
-            if (data.status === "success") {
-                // Begin polling for output
-                setInterval(async () => {
-                    const outputResponse = await fetch("/get_output");
-                    const outputData = await outputResponse.json();
-                    if (outputData.status === "success") {
-                        outputDiv.textContent = outputData.output;
-                    } else {
-                        outputDiv.textContent = "Error: " + outputData.message;
-                    }
-                }, 1000);
-            } else {
-                outputDiv.textContent = "Failed to run CodeSym: " + data.message;
-            }
+  <!-- Main Container with Directory View, Code Viewer & Debug Window, and Active Agents -->
+  <div class="main-container">
+    <!-- Left Panel: Directory Tree / Placeholder -->
+    <aside class="left-panel">
+      <h2>Projects</h2>
+      <div id="directoryTree">
+        <!-- Initially, show a clickable folder icon with prompt text -->
+        <div id="emptyDir" class="empty-dir" onclick="selectProjectDir()">
+          <span class="folder-icon">&#128193;</span>
+          <p>Select Project Directory</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Panel: Code Viewer on top, Debug Window below -->
+    <section class="center-panel">
+      <div class="code-viewer">
+        <pre><code id="codeBlock" class="python"></code></pre>
+      </div>
+      <div class="debug-window" id="debugWindow">
+        <h3>Debug Window</h3>
+        <div id="debugLogs"></div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Active Agents -->
+    <aside class="right-panel">
+      <h2>Active Agents</h2>
+      <div id="activeAgents"></div>
+    </aside>
+  </div>
+
+  <script>
+    // Manager Chat: Send prompt to Manager AI and display conversation.
+    async function sendManagerPrompt() {
+      const promptInput = document.getElementById('managerPrompt');
+      const promptText = promptInput.value.trim();
+      if (!promptText) return;
+      const chatLog = document.getElementById('managerChatLog');
+
+      // Append user's message.
+      const userMessageDiv = document.createElement('div');
+      userMessageDiv.className = 'chat-message user-message';
+      userMessageDiv.textContent = "You: " + promptText;
+      chatLog.appendChild(userMessageDiv);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      promptInput.value = "";
+
+      // Send prompt to manager AI.
+      const response = await fetch('/prompt_manager', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ prompt: promptText })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'chat-message ai-message';
+        aiMessageDiv.textContent = data.response;
+        chatLog.appendChild(aiMessageDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      } else {
+        alert("Error: " + data.message);
+      }
+    }
+
+    // Toggle the settings menu.
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('settingsMenu').style.display = 'block';
+    });
+    document.getElementById('closeSettings').addEventListener('click', function() {
+      document.getElementById('settingsMenu').style.display = 'none';
+    });
+
+    // If "Use same API key" is checked, copy the Manager API key to others.
+    document.getElementById('same_api').addEventListener('change', function() {
+      if (this.checked) {
+        const managerApi = document.getElementById('manager_api').value;
+        document.getElementById('function_api').value = managerApi;
+        document.getElementById('planning_api').value = managerApi;
+      }
+    });
+
+    // Handle settings form submission.
+    document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const config = {
+        manager_api: formData.get('manager_api'),
+        function_api: formData.get('function_api'),
+        planning_api: formData.get('planning_api'),
+        same_api: formData.get('same_api') ? true : false,
+      };
+      const response = await fetch('/save_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      const result = await response.json();
+      alert(result.message);
+      document.getElementById('settingsMenu').style.display = 'none';
+    });
+
+    // Use the File System Access API to show a directory picker.
+    async function selectProjectDir() {
+      if (window.showDirectoryPicker) {
+        try {
+          const dirHandle = await window.showDirectoryPicker();
+          // Remove the empty placeholder.
+          document.getElementById('directoryTree').innerHTML = '';
+          // List the root directory.
+          listDirectory(dirHandle);
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        alert("Directory picker is not supported in this browser.");
+      }
+    }
+
+    // Recursively list entries from a given directory handle.
+    async function listDirectory(dirHandle) {
+      const directoryTree = document.getElementById('directoryTree');
+      directoryTree.innerHTML = '';
+      const ul = document.createElement('ul');
+      for await (const entry of dirHandle.values()) {
+        const li = document.createElement('li');
+        li.textContent = entry.name;
+        li.classList.add(entry.kind); // 'file' or 'directory'
+        li.onclick = async (e) => {
+          e.stopPropagation();
+          if (entry.kind === 'directory') {
+            listDirectory(entry);
+          } else if (entry.kind === 'file') {
+            loadFile(entry);
+          }
+        };
+        ul.appendChild(li);
+      }
+      directoryTree.appendChild(ul);
+    }
+
+    // Load file contents using the File System Access API.
+    async function loadFile(fileHandle) {
+      try {
+        const file = await fileHandle.getFile();
+        const content = await file.text();
+        const codeBlock = document.getElementById('codeBlock');
+        codeBlock.textContent = content;
+        hljs.highlightElement(codeBlock);
+      } catch (e) {
+        console.error("Error reading file:", e);
+      }
+    }
+
+    // Active Agents: Poll every 5 seconds.
+    async function fetchActiveAgents() {
+      const response = await fetch('/active_agents');
+      const data = await response.json();
+      const activeAgentsDiv = document.getElementById('activeAgents');
+      activeAgentsDiv.innerHTML = '';
+      if (data.status === 'success') {
+        data.agents.forEach(agent => {
+          const agentBox = document.createElement('div');
+          agentBox.className = 'agent-box';
+          agentBox.textContent = agent;
+          activeAgentsDiv.appendChild(agentBox);
         });
-    </script>
+      }
+    }
+    setInterval(fetchActiveAgents, 5000);
+    fetchActiveAgents();
+
+    // Debug logs: Poll every 3 seconds.
+    async function fetchDebugLogs() {
+      const response = await fetch('/debug_logs');
+      const data = await response.json();
+      const debugWindow = document.getElementById('debugLogs');
+      if (data.status === 'success') {
+        debugWindow.innerHTML = data.logs.map(log => `<div>${log}</div>`).join('');
+      }
+    }
+    setInterval(fetchDebugLogs, 3000);
+    fetchDebugLogs();
+  </script>
 </body>
 </html>
