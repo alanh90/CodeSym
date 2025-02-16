@@ -54,10 +54,10 @@
     </form>
   </div>
 
-  <!-- Main Container with Left (Folder Tree), Center (Tabbed Code Viewer & Debug), and Right (Active Agents) Panels -->
+  <!-- Main Container with Left (Folder Tree), Resizer, Center (Tabbed Code Viewer & Debug), and Right (Active Agents) Panels -->
   <div class="main-container">
     <!-- Left Panel: Hierarchical Folder Tree -->
-    <aside class="left-panel">
+    <aside class="left-panel" id="leftPanel">
       <h2>Projects</h2>
       <div id="directoryTree">
         <!-- Initially, show a clickable placeholder -->
@@ -68,26 +68,32 @@
       </div>
     </aside>
 
-    <!-- Center Panel: Tabbed Code Viewer on top, Debug Window below -->
-    <section class="center-panel">
-      <!-- Tab Bar -->
-      <div id="tabBar" class="tab-bar"></div>
-      <!-- Tab Content (scrollable code viewer) -->
-      <div id="tabContent" class="tab-content">
-        <!-- Active tab's code will be shown here -->
-      </div>
-      <!-- Debug Window -->
-      <div class="debug-window" id="debugWindow">
-        <h3>Debug Window</h3>
-        <div id="debugLogs"></div>
-      </div>
-    </section>
+    <!-- Resizer for the left panel -->
+    <div class="resizer" id="resizerLeft"></div>
 
-    <!-- Right Panel: Active Agents -->
-    <aside class="right-panel">
-      <h2>Active Agents</h2>
-      <div id="activeAgents"></div>
-    </aside>
+    <!-- Center + Right Panels in a container -->
+    <div class="center-right-container">
+      <!-- Center Panel: Tabbed Code Viewer on top, Debug Window below -->
+      <section class="center-panel">
+        <!-- Tab Bar -->
+        <div id="tabBar" class="tab-bar"></div>
+        <!-- Tab Content (scrollable code viewer) -->
+        <div id="tabContent" class="tab-content">
+          <!-- Active tab's code will be shown here -->
+        </div>
+        <!-- Debug Window -->
+        <div class="debug-window" id="debugWindow">
+          <h3>Debug Window</h3>
+          <div id="debugLogs"></div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Active Agents -->
+      <aside class="right-panel">
+        <h2>Active Agents</h2>
+        <div id="activeAgents"></div>
+      </aside>
+    </div>
   </div>
 
   <script>
@@ -330,6 +336,35 @@
     }
     setInterval(fetchDebugLogs, 3000);
     fetchDebugLogs();
+
+    /* ===================== Left Panel Resizer ===================== */
+    const leftPanel = document.getElementById('leftPanel');
+    const resizer = document.getElementById('resizerLeft');
+    const centerRightContainer = document.querySelector('.center-right-container');
+
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      isResizing = true;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+      if (!isResizing) return;
+      // Constrain the minimum and maximum width for left panel
+      const minWidth = 150;
+      const maxWidth = 600;
+      const newWidth = Math.min(Math.max(e.clientX, minWidth), maxWidth);
+      leftPanel.style.width = newWidth + 'px';
+    }
+
+    function onMouseUp(e) {
+      isResizing = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
   </script>
 </body>
 </html>
